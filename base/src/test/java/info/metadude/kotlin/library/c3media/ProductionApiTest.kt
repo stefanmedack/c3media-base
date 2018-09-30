@@ -1,6 +1,11 @@
 package info.metadude.kotlin.library.c3media
 
-import info.metadude.kotlin.library.c3media.models.*
+import info.metadude.kotlin.library.c3media.models.AspectRatio
+import info.metadude.kotlin.library.c3media.models.Conference
+import info.metadude.kotlin.library.c3media.models.Event
+import info.metadude.kotlin.library.c3media.models.Language
+import info.metadude.kotlin.library.c3media.models.MimeType
+import info.metadude.kotlin.library.c3media.models.Recording
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.assertj.core.api.Assertions.assertThat
@@ -17,7 +22,11 @@ class ProductionApiTest {
     private val BASE_URL = "https://api.media.ccc.de"
 
     private val VALID_CONFERENCE_ID = 73
+    private val VALID_CONFERENCE_ACRONYM = "34c3"
+
     private val VALID_EVENT_ID = 3763
+    private val VALID_EVENT_GUID = "4cb7be14-bfbd-42a2-a556-9ef8e8bd6ba7"
+
     private val VALID_RECORDING_ID = 9967
 
     private val INVALID_CONFERENCE_ID = Int.MAX_VALUE
@@ -61,8 +70,25 @@ class ProductionApiTest {
     }
 
     @Test
-    fun `Validates a conference response`() {
+    fun `Validates a conference by id response`() {
         val call = service.getConference(VALID_CONFERENCE_ID)
+        try {
+            val response = call.execute()
+            if (response.isSuccessful) {
+                val conference = response.body()
+                assertThat(conference!!).isNotNull()
+                assertConference(conference)
+            } else {
+                fail("getConference() response is not successful.")
+            }
+        } catch (e: IOException) {
+            fail("Should not throw {$e}")
+        }
+    }
+
+    @Test
+    fun `Validates a conference by acronym response`() {
+        val call = service.getConference(VALID_CONFERENCE_ACRONYM)
         try {
             val response = call.execute()
             if (response.isSuccessful) {
@@ -188,18 +214,34 @@ class ProductionApiTest {
         assertThat(duration).isNotNull()
         // assertThat(downloadedRecordingsCount).isNotNull()
         assertOriginalLanguage(originalLanguage)
-        assertThat(metadata).isNotNull()
-        assertListEventNestedMetadata(metadata!!)
-    }
-
-    private fun assertListEventNestedMetadata(metadata: Metadata) = with(metadata) {
         assertThat(related).isNotNull
-        // assertThat(remoteId).isNotNull()
+        related!!.forEach { relatedEvent ->
+            assertThat(relatedEvent.eventId).isNotNull()
+            assertThat(relatedEvent.eventGuid).isNotNull()
+            assertThat(relatedEvent.weight).isNotNull()
+        }
     }
 
     @Test
-    fun `Validates an event response`() {
+    fun `Validates an event by id response`() {
         val call = service.getEvent(VALID_EVENT_ID)
+        try {
+            val response = call.execute()
+            if (response.isSuccessful) {
+                val event = response.body()
+                assertThat(event!!).isNotNull()
+                assertEvent(event)
+            } else {
+                fail("getEvent() response is not successful.")
+            }
+        } catch (e: IOException) {
+            fail("Should not throw {$e}")
+        }
+    }
+
+    @Test
+    fun `Validates an event by guid response`() {
+        val call = service.getEvent(VALID_EVENT_GUID)
         try {
             val response = call.execute()
             if (response.isSuccessful) {
